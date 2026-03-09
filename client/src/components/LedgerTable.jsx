@@ -1,18 +1,20 @@
 import React from 'react';
+import { ArrowUpRight, ArrowDownLeft, Tag, BookOpen } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '../utils/formatters';
 
 const LedgerTable = ({ transactions }) => {
     if (!transactions || transactions.length === 0) {
         return (
             <div className="empty-state">
-                <div className="icon">📒</div>
+                <div className="empty-icon">
+                    <BookOpen size={28} />
+                </div>
                 <h3>No transactions yet</h3>
                 <p>Record your first credit or payment to see it here.</p>
             </div>
         );
     }
 
-    // Calculate running balance (from oldest to newest)
     const sorted = [...transactions].reverse();
     let runningBalance = 0;
     const withBalance = sorted.map(txn => {
@@ -24,8 +26,13 @@ const LedgerTable = ({ transactions }) => {
         return { ...txn, running_balance: runningBalance };
     });
 
-    // Display in newest first order
     const displayTxns = withBalance.reverse();
+
+    const typeConfig = {
+        credit: { icon: ArrowUpRight, color: 'var(--color-danger)', badge: 'badge-credit', prefix: '+' },
+        payment: { icon: ArrowDownLeft, color: 'var(--color-success)', badge: 'badge-payment', prefix: '-' },
+        discount: { icon: Tag, color: 'var(--color-warning)', badge: 'badge-discount', prefix: '-' },
+    };
 
     return (
         <div className="table-container">
@@ -40,31 +47,35 @@ const LedgerTable = ({ transactions }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {displayTxns.map((txn, idx) => (
-                        <tr key={txn.id} className="animate-in" style={{ animationDelay: `${idx * 30}ms` }}>
-                            <td>{formatDateTime(txn.created_at)}</td>
-                            <td>
-                                <span className={`badge badge-${txn.type}`}>
-                                    {txn.type === 'credit' ? '📤' : txn.type === 'payment' ? '📥' : '🏷️'} {txn.type}
-                                </span>
-                            </td>
-                            <td style={{ color: 'var(--color-text-secondary)' }}>{txn.note || '—'}</td>
-                            <td style={{
-                                textAlign: 'right',
-                                fontWeight: 600,
-                                color: txn.type === 'credit' ? 'var(--color-danger)' : 'var(--color-success)'
-                            }}>
-                                {txn.type === 'credit' ? '+' : '-'}{formatCurrency(txn.amount)}
-                            </td>
-                            <td style={{
-                                textAlign: 'right',
-                                fontWeight: 700,
-                                color: txn.running_balance > 0 ? 'var(--color-danger-light)' : 'var(--color-success-light)'
-                            }}>
-                                {formatCurrency(Math.abs(txn.running_balance))}
-                            </td>
-                        </tr>
-                    ))}
+                    {displayTxns.map((txn, idx) => {
+                        const config = typeConfig[txn.type] || typeConfig.credit;
+                        const Icon = config.icon;
+                        return (
+                            <tr key={txn.id} className="animate-in" style={{ animationDelay: `${idx * 30}ms` }}>
+                                <td style={{ color: 'var(--color-text-secondary)' }}>{formatDateTime(txn.created_at)}</td>
+                                <td>
+                                    <span className={`badge ${config.badge}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                        <Icon size={12} /> {txn.type}
+                                    </span>
+                                </td>
+                                <td style={{ color: 'var(--color-text-secondary)' }}>{txn.note || '—'}</td>
+                                <td style={{
+                                    textAlign: 'right',
+                                    fontWeight: 600,
+                                    color: config.color
+                                }}>
+                                    {config.prefix}{formatCurrency(txn.amount)}
+                                </td>
+                                <td style={{
+                                    textAlign: 'right',
+                                    fontWeight: 700,
+                                    color: txn.running_balance > 0 ? 'var(--color-danger-light)' : 'var(--color-success-light)'
+                                }}>
+                                    {formatCurrency(Math.abs(txn.running_balance))}
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BookOpenCheck } from 'lucide-react';
 import { login, register } from '../services/authService';
 
 const Login = () => {
@@ -34,8 +35,10 @@ const Login = () => {
     return (
         <div className="auth-page">
             <div className="auth-card animate-in">
-                <div style={{ textAlign: 'center', marginBottom: 'var(--space-lg)' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: 'var(--space-sm)' }}>📗</div>
+                <div className="auth-brand">
+                    <div className="auth-brand-icon">
+                        <BookOpenCheck size={24} />
+                    </div>
                     <h1>SmartLedger</h1>
                     <p className="subtitle">{isRegister ? 'Create your account' : 'Welcome back'}</p>
                 </div>

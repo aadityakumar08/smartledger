@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Trash2, CreditCard, Wallet, MessageCircle, Smartphone, PhoneCall, Bell, BarChart3 } from 'lucide-react';
 import LedgerTable from '../components/LedgerTable';
 import TransactionForm from '../components/TransactionForm';
 import ReminderModal from '../components/ReminderModal';
 import PaymentModal from '../components/PaymentModal';
+import { SkeletonProfile, SkeletonRow } from '../components/Skeleton';
+import { showToast } from '../components/Toast';
 import { getCustomerById, deleteCustomer } from '../services/customerService';
 import { getTransactions, createTransaction } from '../services/transactionService';
 import { formatCurrency, formatPhone, getInitials, formatDate } from '../utils/formatters';
@@ -19,7 +22,6 @@ const CustomerProfile = () => {
     const [showTxnForm, setShowTxnForm] = useState(false);
     const [showReminder, setShowReminder] = useState(false);
     const [showPayment, setShowPayment] = useState(false);
-    const [error, setError] = useState('');
 
     const fetchData = async () => {
         try {
@@ -30,7 +32,7 @@ const CustomerProfile = () => {
             setCustomer(custData);
             setTransactions(txnData);
         } catch (err) {
-            setError('Failed to load customer data.');
+            showToast('Failed to load customer data.', 'error');
         } finally {
             setLoading(false);
         }
@@ -44,18 +46,20 @@ const CustomerProfile = () => {
         try {
             await createTransaction(parseInt(id), amount, type, note);
             setShowTxnForm(false);
+            showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} of ${formatCurrency(amount)} recorded!`, 'success');
             fetchData();
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to record transaction');
+            showToast(err.response?.data?.error || 'Failed to record transaction', 'error');
         }
     };
 
     const handlePayment = async ({ amount, type, note }) => {
         try {
             await createTransaction(parseInt(id), amount, type, note);
+            showToast(`Payment of ${formatCurrency(amount)} collected!`, 'success');
             fetchData();
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to record payment');
+            showToast(err.response?.data?.error || 'Failed to record payment', 'error');
         }
     };
 
@@ -63,9 +67,10 @@ const CustomerProfile = () => {
         if (!window.confirm(`Delete ${customer.name}? This will remove all their transactions.`)) return;
         try {
             await deleteCustomer(id);
+            showToast(`${customer.name} deleted successfully.`, 'info');
             navigate('/customers');
         } catch (err) {
-            setError('Failed to delete customer.');
+            showToast('Failed to delete customer.', 'error');
         }
     };
 
@@ -73,7 +78,24 @@ const CustomerProfile = () => {
     const shopName = user?.shop_name || 'SmartLedger';
 
     if (loading) {
-        return <div className="loading-container"><div className="spinner"></div></div>;
+        return (
+            <div className="animate-in">
+                <button className="btn btn-ghost btn-sm" disabled style={{ marginBottom: 'var(--space-md)' }}>
+                    <ArrowLeft size={14} /> Back
+                </button>
+                <SkeletonProfile />
+                <div className="table-container">
+                    <table className="table">
+                        <thead><tr><th>Date</th><th>Type</th><th>Note</th><th>Amount</th><th>Balance</th></tr></thead>
+                        <tbody>
+                            <SkeletonRow columns={5} />
+                            <SkeletonRow columns={5} />
+                            <SkeletonRow columns={5} />
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
     }
 
     if (!customer) {
@@ -83,37 +105,34 @@ const CustomerProfile = () => {
     const message = generateReminderMessage(customer.balance, shopName);
 
     const actions = [
-        { icon: '🗑️', label: 'Delete', onClick: handleDelete, color: 'var(--color-danger)' },
-        { icon: '📤', label: 'Give Credit', onClick: () => setShowTxnForm(true) },
-        { icon: '💰', label: 'Collect Payment', onClick: () => setShowPayment(true), color: 'var(--color-success)' },
-        { icon: '💬', label: 'WhatsApp', href: generateWhatsAppLink(customer.phone, message), color: '#25D366' },
-        { icon: '📱', label: 'SMS', href: generateSmsLink(customer.phone, message) },
-        { icon: '📞', label: 'Call', href: `tel:${customer.phone}` },
-        { icon: '🔔', label: 'Reminder', onClick: () => setShowReminder(true) },
-        { icon: '📊', label: 'Report', onClick: () => navigate(`/ledger?customer=${id}`) },
+        { icon: Trash2, label: 'Delete', onClick: handleDelete, color: 'var(--color-danger)' },
+        { icon: CreditCard, label: 'Give Credit', onClick: () => setShowTxnForm(true) },
+        { icon: Wallet, label: 'Collect Payment', onClick: () => setShowPayment(true), color: 'var(--color-success)' },
+        { icon: MessageCircle, label: 'WhatsApp', href: generateWhatsAppLink(customer.phone, message), color: '#22C55E' },
+        { icon: Smartphone, label: 'SMS', href: generateSmsLink(customer.phone, message) },
+        { icon: PhoneCall, label: 'Call', href: `tel:${customer.phone}` },
+        { icon: Bell, label: 'Reminder', onClick: () => setShowReminder(true) },
+        { icon: BarChart3, label: 'Report', onClick: () => navigate(`/ledger?customer=${id}`) },
     ];
 
     return (
         <div className="animate-in">
-            {/* Back Button */}
             <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)} style={{ marginBottom: 'var(--space-md)' }}>
-                ← Back
+                <ArrowLeft size={14} /> Back
             </button>
-
-            {error && <div className="alert alert-error">{error}</div>}
 
             {/* Profile Header */}
             <div className="card-glass" style={{ marginBottom: 'var(--space-xl)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
-                    <div className="customer-avatar" style={{ width: 72, height: 72, fontSize: 'var(--font-size-2xl)' }}>
+                    <div className="customer-avatar" style={{ width: 64, height: 64, fontSize: 'var(--font-size-2xl)' }}>
                         {getInitials(customer.name)}
                     </div>
                     <div style={{ flex: 1 }}>
                         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, marginBottom: 4 }}>
                             {customer.name}
                         </h1>
-                        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                            📞 {formatPhone(customer.phone)} · Customer since {formatDate(customer.created_at)}
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <PhoneCall size={13} /> {formatPhone(customer.phone)} · Since {formatDate(customer.created_at)}
                         </p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -124,37 +143,34 @@ const CustomerProfile = () => {
                     </div>
                 </div>
 
-                {/* Action Panel */}
                 <div className="action-panel">
-                    {actions.map((action, i) => (
-                        action.href ? (
-                            <a key={i} className="action-btn" href={action.href} target="_blank" rel="noopener noreferrer"
-                                style={action.color ? { '--hover-color': action.color } : {}}>
-                                <span className="icon">{action.icon}</span>
+                    {actions.map((action, i) => {
+                        const Icon = action.icon;
+                        return action.href ? (
+                            <a key={i} className="action-btn" href={action.href} target="_blank" rel="noopener noreferrer">
+                                <Icon size={18} />
                                 {action.label}
                             </a>
                         ) : (
-                            <button key={i} className="action-btn" onClick={action.onClick}
-                                style={action.color ? { '--hover-color': action.color } : {}}>
-                                <span className="icon">{action.icon}</span>
+                            <button key={i} className="action-btn" onClick={action.onClick}>
+                                <Icon size={18} />
                                 {action.label}
                             </button>
-                        )
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
             {/* Transaction History */}
             <div className="flex-between" style={{ marginBottom: 'var(--space-md)' }}>
-                <h2 style={{ fontSize: 'var(--font-size-xl)' }}>Transaction History</h2>
-                <button className="btn btn-primary" onClick={() => setShowTxnForm(true)}>
-                    ➕ New Transaction
+                <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>Transaction History</h2>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowTxnForm(true)}>
+                    <CreditCard size={14} /> New Transaction
                 </button>
             </div>
 
             <LedgerTable transactions={transactions} />
 
-            {/* Modals */}
             {showTxnForm && (
                 <TransactionForm
                     customerName={customer.name}

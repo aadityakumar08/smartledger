@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { IndianRupee, TrendingDown, TrendingUp, Percent, AlertTriangle, PartyPopper } from 'lucide-react';
 import { getCustomers, getSummary } from '../services/customerService';
 import { formatCurrency } from '../utils/formatters';
+import { ReportsSkeleton } from '../components/Skeleton';
+import { showToast } from '../components/Toast';
 
 const Reports = () => {
     const [summary, setSummary] = useState(null);
@@ -17,7 +20,7 @@ const Reports = () => {
                 setSummary(sumData);
                 setCustomers(custData);
             } catch (err) {
-                console.error('Failed to load reports');
+                showToast('Failed to load reports', 'error');
             } finally {
                 setLoading(false);
             }
@@ -26,7 +29,7 @@ const Reports = () => {
     }, []);
 
     if (loading) {
-        return <div className="loading-container"><div className="spinner"></div></div>;
+        return <ReportsSkeleton />;
     }
 
     const defaulters = customers
@@ -44,26 +47,37 @@ const Reports = () => {
                 <p>Financial summary and insights</p>
             </div>
 
-            {/* Summary Stats */}
             {summary && (
                 <div className="stats-grid">
                     <div className="stat-card">
+                        <div className="stat-card-icon primary">
+                            <IndianRupee size={20} />
+                        </div>
                         <div className="stat-label">Total Credit Given</div>
                         <div className="stat-value">{formatCurrency(totalCredit)}</div>
                     </div>
-                    <div className="stat-card success">
+                    <div className="stat-card">
+                        <div className="stat-card-icon success">
+                            <TrendingUp size={20} />
+                        </div>
                         <div className="stat-label">Total Collected</div>
                         <div className="stat-value" style={{ color: 'var(--color-success)' }}>
                             {formatCurrency(totalCollected)}
                         </div>
                     </div>
-                    <div className="stat-card danger">
+                    <div className="stat-card">
+                        <div className="stat-card-icon danger">
+                            <TrendingDown size={20} />
+                        </div>
                         <div className="stat-label">Outstanding</div>
                         <div className="stat-value" style={{ color: 'var(--color-danger)' }}>
                             {formatCurrency(summary.total_outstanding)}
                         </div>
                     </div>
-                    <div className="stat-card warning">
+                    <div className="stat-card">
+                        <div className="stat-card-icon warning">
+                            <Percent size={20} />
+                        </div>
                         <div className="stat-label">Collection Rate</div>
                         <div className="stat-value" style={{ color: 'var(--color-warning)' }}>
                             {collectionRate}%
@@ -74,13 +88,16 @@ const Reports = () => {
 
             {/* Defaulters Table */}
             <div style={{ marginTop: 'var(--space-xl)' }}>
-                <h2 style={{ fontSize: 'var(--font-size-xl)', marginBottom: 'var(--space-md)' }}>
-                    ⚠️ Defaulters ({defaulters.length})
+                <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertTriangle size={18} style={{ color: 'var(--color-warning)' }} />
+                    Defaulters ({defaulters.length})
                 </h2>
 
                 {defaulters.length === 0 ? (
                     <div className="empty-state">
-                        <div className="icon">🎉</div>
+                        <div className="empty-icon">
+                            <PartyPopper size={28} />
+                        </div>
                         <h3>No defaulters!</h3>
                         <p>All customers have cleared their balances.</p>
                     </div>
@@ -114,8 +131,8 @@ const Reports = () => {
 
             {/* All Customers Summary */}
             <div style={{ marginTop: 'var(--space-xl)' }}>
-                <h2 style={{ fontSize: 'var(--font-size-xl)', marginBottom: 'var(--space-md)' }}>
-                    📋 All Customers Summary
+                <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--space-md)' }}>
+                    All Customers Summary
                 </h2>
 
                 <div className="table-container">
