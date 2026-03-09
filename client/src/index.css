@@ -1168,14 +1168,14 @@ a:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.97);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: #09090B;
     flex-direction: column;
-    padding: var(--space-xl);
+    padding: var(--space-lg) var(--space-xl);
+    padding-top: var(--space-xl);
     gap: var(--space-sm);
-    z-index: 99;
-    animation: fadeIn 0.2s ease;
+    z-index: 999;
+    overflow-y: auto;
+    animation: fadeIn 0.15s ease;
   }
 
   .navbar-links.mobile-open {
