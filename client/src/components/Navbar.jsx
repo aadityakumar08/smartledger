@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, BookOpen, BarChart3, LogOut, Store, Menu, X, BookOpenCheck } from 'lucide-react';
 import { logout, getUser } from '../services/authService';
@@ -9,8 +9,24 @@ const Navbar = () => {
     const user = getUser();
     const [mobileOpen, setMobileOpen] = useState(false);
 
+    // Close mobile menu on route change
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [location.pathname]);
+
+    // Prevent body scroll when menu is open
+    useEffect(() => {
+        if (mobileOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [mobileOpen]);
+
     const handleLogout = () => {
         logout();
+        setMobileOpen(false);
         navigate('/login');
     };
 
@@ -31,36 +47,21 @@ const Navbar = () => {
                     SmartLedger
                 </Link>
 
-                <div className={`navbar-links ${mobileOpen ? 'mobile-open' : ''}`}>
+                {/* Desktop nav links */}
+                <div className="navbar-links-desktop">
                     {links.map(link => (
                         <Link
                             key={link.to}
                             to={link.to}
                             className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}
-                            onClick={() => setMobileOpen(false)}
                         >
                             <link.icon size={16} />
                             {link.label}
                         </Link>
                     ))}
-
-                    {/* Mobile-only footer */}
-                    {mobileOpen && (
-                        <div className="navbar-mobile-footer">
-                            {user && (
-                                <span className="navbar-user-info">
-                                    <Store size={14} />
-                                    {user.shop_name || user.name}
-                                </span>
-                            )}
-                            <button className="btn btn-ghost btn-sm" onClick={() => { handleLogout(); setMobileOpen(false); }}>
-                                <LogOut size={14} />
-                                Logout
-                            </button>
-                        </div>
-                    )}
                 </div>
 
+                {/* Desktop user info */}
                 <div className="navbar-right">
                     {user && (
                         <span className="navbar-user-info">
@@ -74,6 +75,7 @@ const Navbar = () => {
                     </button>
                 </div>
 
+                {/* Hamburger button */}
                 <button
                     className="hamburger"
                     onClick={() => setMobileOpen(!mobileOpen)}
@@ -83,6 +85,36 @@ const Navbar = () => {
                     {mobileOpen ? <X size={22} /> : <Menu size={22} />}
                 </button>
             </div>
+
+            {/* Mobile full-screen overlay — OUTSIDE navbar-inner */}
+            {mobileOpen && (
+                <div className="mobile-nav-overlay">
+                    {links.map(link => (
+                        <Link
+                            key={link.to}
+                            to={link.to}
+                            className={`mobile-nav-link ${location.pathname === link.to ? 'active' : ''}`}
+                            onClick={() => setMobileOpen(false)}
+                        >
+                            <link.icon size={20} />
+                            {link.label}
+                        </Link>
+                    ))}
+
+                    <div className="mobile-nav-divider" />
+
+                    {user && (
+                        <div className="mobile-nav-user">
+                            <Store size={16} />
+                            {user.shop_name || user.name}
+                        </div>
+                    )}
+                    <button className="btn btn-ghost" onClick={handleLogout} style={{ width: '100%' }}>
+                        <LogOut size={16} />
+                        Logout
+                    </button>
+                </div>
+            )}
         </nav>
     );
 };
